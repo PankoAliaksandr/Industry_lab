@@ -1,5 +1,4 @@
 # Libraries
-# Changed by Nadia
 library(stringr)
 library(lubridate)
 library(xts)
@@ -378,7 +377,7 @@ all_best_stocks_number = as.xts(all_best_stocks_number_df, order.by = sp500_retu
 all_best_portfolio_returns_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = 1))
 colnames(all_best_portfolio_returns_df) = "Return"
 all_best_portfolio_returns = as.xts(all_best_portfolio_returns_df, order.by = sp500_returns$Date)
-
+ 
 # Statistics_df
 annual_return_df = data.frame(matrix(NA,nrow = 5, ncol = 6))
 annual_sd_df = data.frame(matrix(NA,nrow = 5, ncol = 6))
@@ -479,7 +478,7 @@ for(i in 1:length(years)){
       
       # Column index with ESGCS 
       ESGCS_col_index = grep(pattern = stock_code, x = sp500_ESGCS_december_data_colnames)
-      
+
       if(length(ESGCS_col_index)>0) {
         
         stock_ESGCS = sp500_ESGCS_december_data[i,ESGCS_col_index]
@@ -613,7 +612,7 @@ for(i in 1:length(years)){
       
       # Find momentum score of companies in portfolio 
       portfolio_ESGCS_company_mom_score = unlist(analyzed_mom_score_for_ESGCS[portfolio_ESGCS_indices])
-      
+
       # Calculate portfolo return current week
       ESGCS_portfolios_returns[week_number,l] = mean(portfolio_ESGCS_stock_returns)
       
@@ -850,7 +849,7 @@ for(i in 1:length(years)){
       
     }
     #################################### Corporate Governance portfolios End #####################################
-    
+ 
     # Find number of all best stocks
     all_best_stocks = Reduce(intersect, list(best_E_stocks_current_week, best_S_stocks_current_week, best_G_stocks_current_week))
     all_best_stocks_number[week_number,"Number of stocks"] = length(all_best_stocks)
@@ -858,7 +857,7 @@ for(i in 1:length(years)){
     # Find returns of all best stocks
     all_best_stocks_indices = unique (grep(paste(all_best_stocks,collapse="|"), stock_codes))
     all_best_stocks_returns = sp500_ret_cur_w_in_index[all_best_stocks_indices]
-    all_best_portfolio_returns[week_number,"Return"] = mean(unlist(all_best_stocks_returns))
+    all_best_portfolio_returns[week_number,"Return"] = mean(all_best_stocks_returns)
     
     
     #################################### ESG portfolios Start #####################################
