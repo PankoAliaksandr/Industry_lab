@@ -6,6 +6,56 @@ library(xts)
 library(PerformanceAnalytics)
 library(psych)
 
+prepare_data <- function(){
+  # upload data containers with sp500 returns
+  # prepare mask df to determine if a stock is in SP500 
+  # create df for scores
+}
+
+compare_scores <- function(df_esg_ds_orig, df_esg_ds_adj, df_systanal){
+  # Calculate correlations, ranges
+  
+  return(ma_corr, l_ranges)
+  
+}
+
+find_curr_sp500_comp <- function(containers, mask, reshuffle_date){
+  # Based on mask determine companies that are in SP500 for required date
+  return(df_curr_sp500_comps)
+}
+
+form_five_prortfolios_by_esg <- function(df_curr_SP500_comps, split_by){
+  #split_by: E,S,G or ESG
+  
+  
+  # calculate percentiles in ESG
+  # find number of comp in a portf.
+  # sort all comp by ESG 
+  # form portf
+  # check how many companies with the same score (intersection)
+  # Opt: plot hist to show ratings distribution
+  # This helps a lot to see the whole picture
+  
+  return(df_portfs)
+  # df_portfs - is a dataframe with 6 columns (for each portfolio and benchmark)
+  # rows contains companies which are in corresponding portfolio
+  
+}
+
+find_all_the_best <- function(df_ESG, percentile = 20, df_curr_sp500_comps){
+  # Find companies that are in best precentile in every cathegory
+  return(v_best_weights)
+}
+
+calculate_performance_5 <- function(df_portfs, benchmark){
+  # duing reshuffle every year calculate annual and overall performance:
+  # include tables with standard deviation and means (monthly and overall)
+  # Calculate also cummulative retun
+  
+  return(xts_std, xts_mean, xts_cumm_ret)
+}
+
+
 # Read data container with filter
 source( "D:/pclasses.R")
 imp_path <- imp_path <- file.path("D:/Data Containers/SPCOMP")
