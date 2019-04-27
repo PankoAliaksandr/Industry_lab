@@ -1,76 +1,61 @@
 # Libraries
-library(stringr)
-library(lubridate)
-library(xts)
-library(PerformanceAnalytics)
-library(psych)
-library(openxlsx)
+# library(stringr)
+# library(lubridate)
+# library(xts)
+# library(PerformanceAnalytics)
+# library(psych)
+# library(openxlsx)
+
+
+wd ="D:/Projects/IN PROGRESS/GitHub/Industry_lab_user2/"
+source(paste0(wd,"pclasses.R"))
+
+start_date = "2003-06-01"
+end_date = "2018-05-31"
+
+data_containers_dir = file.path(paste0(wd,"Data Containers/SPCOMP"))
+conR = dbFsConInit(data_containers_dir)
 
 # Read data container with filter
-source( "C:/Users/WZHYAK/Desktop/Industry Lab/pclasses.R")
-imp_path = file.path("C:/Users/WZHYAK/Desktop/Industry Lab/Data Containers/SPCOMP")
-conR = dbFsConInit(imp_path)
-dc5 = dbConRead(conR,dcInit(id="SPCOMP_IsinIX_W",dbCon=conR))
-sp500_filter = as.data.frame(dc5$data)
+data_containers_names = c("SPCOMP_IsinIX_W",
+                          "SPCOMP_RIAbsSimpR_W_USD",
+                          "SPCOMP_Benchmark_RIAbsSimpR_W_USD",
+                          "SPCOMP_Score_Size",
+                          "SPCOMP_Score_BTP",
+                          "SPCOMP_Score_Momentum"
+                          )
 
-# Period from 2003-06-01 to 2018-05-31
-sp500_filter$Date = as.Date(row.names(sp500_filter))
-sp500_filter = sp500_filter[(sp500_filter$Date>="2003-06-01" & sp500_filter$Date<="2018-05-31"),]
+xts_names = c("sp500_filter",
+              "sp500_returns",
+              "benchmark_returns",
+              "sp500_size_score",
+              "sp500_btp_score",
+              "sp500_mom_score"
+              )
 
-# Read data container with stock returns
-dc5 = dbConRead(conR,dcInit(id="SPCOMP_RIAbsSimpR_W_USD",dbCon=conR))
-sp500_returns = as.data.frame(dc5$data)
+for(i in 1:length(data_containers_names)){
+  dc5 = dbConRead(conR, dcInit(id = data_containers_names[i], dbCon = conR))
+  df_name = paste0(xts_names[i],"_df")
+  
+  # Create data frame and xts object with predefined names
+  df = assign(df_name, as.data.frame(dc5$data))
+  xts_object = xts(x = df, order.by = as.Date(rownames(df)))
+  # Analyzed Period
+  xts_object = window(x = xts_object, start = start_date, end = end_date)
+  xts_object = assign(xts_names[i], xts_object)
+}
+
+
+# Convert percent to number
 sp500_returns = sp500_returns / 100
+benchmark_returns = benchmark_returns / 100
 
+# sp500 universe info
 stocks_number_spcomp = ncol(sp500_returns)
 stock_codes_spcomp = colnames(sp500_returns)
 
-# Period from 2003-06-01 to 2018-05-31
-sp500_returns$Date = as.Date(row.names(sp500_returns))
-sp500_returns = sp500_returns[(sp500_returns$Date>="2003-06-01" & sp500_returns$Date<="2018-05-31"),]
-period = rownames(sp500_returns)
 
-# Read data container with benchmark returns
-dc5 = dbConRead(conR,dcInit(id="SPCOMP_Benchmark_RIAbsSimpR_W_USD",dbCon=conR))
-benchmark_returns = as.data.frame(dc5$data)
-benchmark_returns = benchmark_returns / 100
 
-# Period from 2003-06-01 to 2018-05-31
-benchmark_returns$Date = as.Date(row.names(benchmark_returns))
-benchmark_returns = benchmark_returns[(benchmark_returns$Date>="2003-06-01" & benchmark_returns$Date<="2018-05-31"),]
-benchmark_returns = xts(benchmark_returns$Index, order.by = benchmark_returns$Date)
-
-# Read data container with weights
-dc5 = dbConRead(conR,dcInit(id="SPCOMP_WeightedIsinIX_W",dbCon=conR))
-sp500_weights = as.data.frame(dc5$data)
-
-# Period from 2003-06-01 to 2018-05-31
-sp500_weights$Date = as.Date(row.names(sp500_weights))
-sp500_weights = sp500_weights[(sp500_weights$Date>="2003-06-01" & sp500_weights$Date<="2018-05-31"),]
-
-# Read data container with size score
-dc5 = dbConRead(conR,dcInit(id="SPCOMP_Score_Size",dbCon=conR))
-sp500_size_score = as.data.frame(dc5$data)
-
-# Period from 2003-06-01 to 2018-05-31
-sp500_size_score$Date = as.Date(row.names(sp500_size_score))
-sp500_size_score = sp500_size_score[(sp500_size_score$Date>="2003-06-01" & sp500_size_score$Date<="2018-05-31"),]
-
-# Read data container with book-to-price score
-dc5 = dbConRead(conR,dcInit(id="SPCOMP_Score_BTP",dbCon=conR))
-sp500_btp_score = as.data.frame(dc5$data)
-
-# Period from 2003-06-01 to 2018-05-31
-sp500_btp_score$Date = as.Date(row.names(sp500_btp_score))
-sp500_btp_score = sp500_btp_score[(sp500_btp_score$Date>="2003-06-01" & sp500_btp_score$Date<="2018-05-31"),]
-
-# Read data container with momentum score
-dc5 = dbConRead(conR,dcInit(id="SPCOMP_Score_Momentum",dbCon=conR))
-sp500_mom_score = as.data.frame(dc5$data)
-
-# Period from 2003-06-01 to 2018-05-31
-sp500_mom_score$Date = as.Date(row.names(sp500_mom_score))
-sp500_mom_score = sp500_mom_score[(sp500_mom_score$Date>="2003-06-01" & sp500_mom_score$Date<="2018-05-31"),]
 
 # Read monthly ESG data
 esg_sp500_monthly = read.csv(file = "C:/Users/WZHYAK/Desktop/Industry Lab/SPCOMP_E_S_G_ESGCS_monthly.csv",header = TRUE, sep =";", dec = ",")
@@ -144,7 +129,7 @@ sp500_G_data$Date = esg_monthly_dates
 sp500_ESG_data$Date = simple_esg_monthly_dates
 sp500_equal_ESG_data$Date = esg_monthly_dates
 
-# Period from 2002-12-01 to 2017-12-31
+# index(sp500_returns) from 2002-12-01 to 2017-12-31
 sp500_ESGCS_data = sp500_ESGCS_data[(sp500_ESGCS_data$Date>="2002-12-01" & sp500_ESGCS_data$Date<="2017-12-31"),]
 sp500_E_data = sp500_E_data[(sp500_E_data$Date>="2002-12-01" & sp500_E_data$Date<="2017-12-31"),]
 sp500_S_data = sp500_S_data[(sp500_S_data$Date>="2002-12-01" & sp500_S_data$Date<="2017-12-31"),]
@@ -210,7 +195,7 @@ ESGCS_missing_mom_score = as.xts(ESGCS_missing_mom_score_df, order.by = sp500_re
 
 ESGCS_stock_in_portfolio_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = stocks_number_spcomp))
 colnames(ESGCS_stock_in_portfolio_df) = stock_codes_spcomp
-ESGCS_stock_in_portfolio_df$Date = period
+ESGCS_stock_in_portfolio_df$Date = index(sp500_returns)
 
 # E
 E_portfolios_returns_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = 7))
@@ -247,7 +232,7 @@ E_missing_mom_score = as.xts(E_missing_mom_score_df, order.by = sp500_returns$Da
 
 E_stock_in_portfolio_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = stocks_number_spcomp))
 colnames(E_stock_in_portfolio_df) = stock_codes_spcomp
-E_stock_in_portfolio_df$Date = period
+E_stock_in_portfolio_df$Date = index(sp500_returns)
 
 # S
 S_portfolios_returns_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = 7))
@@ -284,7 +269,7 @@ S_missing_mom_score = as.xts(S_missing_mom_score_df, order.by = sp500_returns$Da
 
 S_stock_in_portfolio_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = stocks_number_spcomp))
 colnames(S_stock_in_portfolio_df) = stock_codes_spcomp
-S_stock_in_portfolio_df$Date = period
+S_stock_in_portfolio_df$Date = index(sp500_returns)
 
 # G
 G_portfolios_returns_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = 7))
@@ -321,7 +306,7 @@ G_missing_mom_score = as.xts(G_missing_mom_score_df, order.by = sp500_returns$Da
 
 G_stock_in_portfolio_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = stocks_number_spcomp))
 colnames(G_stock_in_portfolio_df) = stock_codes_spcomp
-G_stock_in_portfolio_df$Date = period
+G_stock_in_portfolio_df$Date = index(sp500_returns)
 
 # ESG
 ESG_portfolios_returns_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = 7))
@@ -358,7 +343,7 @@ ESG_missing_mom_score = as.xts(ESG_missing_mom_score_df, order.by = sp500_return
 
 ESG_stock_in_portfolio_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = stocks_number_spcomp))
 colnames(ESG_stock_in_portfolio_df) = stock_codes_spcomp
-ESG_stock_in_portfolio_df$Date = period
+ESG_stock_in_portfolio_df$Date = index(sp500_returns)
 
 # Equal ESG
 equal_ESG_portfolios_returns_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = 7))
@@ -395,7 +380,7 @@ equal_ESG_missing_mom_score = as.xts(equal_ESG_missing_mom_score_df, order.by = 
 
 equal_ESG_stock_in_portfolio_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = stocks_number_spcomp))
 colnames(equal_ESG_stock_in_portfolio_df) = stock_codes_spcomp
-equal_ESG_stock_in_portfolio_df$Date = period
+equal_ESG_stock_in_portfolio_df$Date = index(sp500_returns)
 
 # All best stocks
 all_best_stocks_number_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = 1))
@@ -408,7 +393,7 @@ all_best_portfolio_returns = as.xts(all_best_portfolio_returns_df, order.by = sp
 
 all_best_stock_in_portfolio_df = data.frame(matrix(NA,nrow = number_of_rows, ncol = stocks_number_spcomp))
 colnames(all_best_stock_in_portfolio_df) = stock_codes_spcomp
-all_best_stock_in_portfolio_df $Date = period
+all_best_stock_in_portfolio_df $Date = index(sp500_returns)
  
 # Statistics_df
 annual_return_df = data.frame(matrix(NA,nrow = 5, ncol = 6))
