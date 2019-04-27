@@ -55,6 +55,24 @@ calculate_performance_5 <- function(df_portfs, benchmark){
   return(xts_std, xts_mean, xts_cumm_ret)
 }
 
+calculate_portfs_bear_beta <- function(){
+  
+}
+
+calculate_portf_bull_beta() <- function(){
+  
+}
+
+calculate_portfs_betas <- function(){
+  calculate_portfs_bear_beta()
+  calculate_portf_bull_beta()
+  
+}
+
+calculate_btp <- function(){
+  
+}
+
 
 # Read data container with filter
 source( "D:/pclasses.R")
