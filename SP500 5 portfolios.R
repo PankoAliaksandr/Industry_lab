@@ -52,7 +52,26 @@ calculate_performance_5 <- function(df_portfs, benchmark){
   # include tables with standard deviation and means (monthly and overall)
   # Calculate also cummulative retun
   
-  return(xts_std, xts_mean, xts_cumm_ret)
+  return(xts_std, xts_mean,xts_portf_ret, xts_cumm_ret)
+}
+
+plot_performance <- function(xts_cumm_ret){
+  # The function plots performance of all portfolios on one plot
+}
+
+det_avg_size <- function(df_portfs){
+  return (v_avg_size)
+}
+
+form_portf_having_size <- function(df_scores, df_curr_sp500_comps){
+  # here include benchmark in curr_sp500_comps
+  # split all curr comps into small and big parts
+  form_five_prortfolios_by_esg(df_curr_SP500_comps = df_small,split_by = esg )
+  form_five_prortfolios_by_esg(df_curr_SP500_comps = df_big, split_by = esg )
+  calculate_performance_5(df_portfs = small,benchmark = benchmark)  
+  calculate_performance_5(df_portfs = big,benchmark = benchmark)  
+  plot_performance(xts_cumm_ret = small)
+  plot_performance(xts_cumm_ret = big)
 }
 
 
