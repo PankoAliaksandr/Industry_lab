@@ -35,13 +35,15 @@ xts_names = c("filter",
               "mom_score"
               )
 
+# Create xts objects from containers
 for(i in 1:length(data_containers_names)){
   dc5 = dbConRead(conR, dcInit(id = data_containers_names[i], dbCon = conR))
   df_name = paste0(xts_names[i],"_df")
   
   # Create data frame and xts object with predefined names
-  df = assign(df_name, as.data.frame(dc5$data))
-  xts_object = xts(x = df, order.by = as.Date(rownames(df)))
+  assign(df_name, as.data.frame(dc5$data))
+  temp_df = get(df_name)
+  xts_object = xts(x = temp_df, order.by = as.Date(rownames(temp_df)))
   # Analyzed Period
   xts_object = window(x = xts_object, start = start_date, end = end_date)
   assign(xts_names[i], xts_object)
@@ -95,7 +97,8 @@ esg_scores = c("esgcs",
                 "g")
 
 esg_scores_num = length(esg_scores)
-                           
+
+#  Create 5 xts objects for 5 diff scores                        
 for(i in 1:esg_scores_num){
   # Apply pattern
   stock_ind  = grep(pattern = esg_scores_patterns[i], x = esg_scores_colnames)
@@ -135,14 +138,13 @@ extended_portfolios_num = length(extended_portfolio_names)
 df1 = data.frame(matrix(NA,nrow = weeks_num_in_period, ncol = extended_portfolios_num))
 colnames(df1) = extended_portfolio_names
 xts_object1 = xts(x = df1, order.by = period)
-
+rm(df1)
 # Create xts object containing filter(NA,1,2,3,4,5) to show in which portfolio is stock in current week
 df2 = data.frame(matrix(NA,nrow = weeks_num_in_period, ncol = all_stocks_num))
 colnames(df2) = all_stocks_codes
 xts_object2 = xts(x = df2, order.by = period)
+rm(df2)
 
-
-# TODO check REFFERENCE OR VALUE
 for(esg_score in esg_scores){
   
   # Create xts object to save portfolio returns
@@ -160,10 +162,10 @@ avg_scores = c("_avg_esg_score",
                "_avg_btp_score",
                "_avg_mom_score")
 
-# TODO check REF
 df = data.frame(matrix(NA, nrow = weeks_num_in_period, ncol = portfolios_num))
 colnames(df) = portfolio_names
 xts_object = xts(x = df, order.by = period)
+rm(df)
 
 for(esg_score in esg_scores){
   for(avg_score in avg_scores){
@@ -207,16 +209,23 @@ df = data.frame(matrix(NA, nrow = portfolios_num, ncol = esg_scores_num))
 rownames(df) = portfolio_names
 colnames(df) = esg_scores
 
-# TODO check REF
 for(statistics_df_name in statistics_df_names)
 {
   assign(x = statistics_df_name, value = df)
 }
+rm(df)
 
 # Scores are changing once a  (in Dec)
 week_num = 0
 # get years
 years = year(dec_period)[-1]
+
+# Create vectors to save stock codes for stocks that are in index and have esg sore (current week)
+vector = c()
+for(esg_score in esg_scores){
+  vector_name = paste0("stock_codes_with_", esg_score)
+  assign(x = vector_name, value = vector)
+}
 
 for(i in 1:length(years)){
   
@@ -229,6 +238,7 @@ for(i in 1:length(years)){
   last_date_curr_year = as.Date(paste0(next_year, "-05-31"))
   
   xts_names = xts_names[xts_names!= "benchmark_returns"]
+  num_weeks_curr_year = 0
   # Create xts objects (filter, stock returns,size/btp/mom scores) for current investment year
   for(xts_name in xts_names){
     # Load data from data container (whole period)
@@ -237,22 +247,17 @@ for(i in 1:length(years)){
     xts_object_curr_year = window(x = xts_object, start = first_date_curr_year, end = last_date_curr_year)
     xts_object_curr_year_name = paste0(xts_name, "_curr_year")
     assign(x = xts_object_curr_year_name, value = xts_object_curr_year)
+    if(num_weeks_curr_year == 0){
+      num_weeks_curr_year = nrow(xts_object_curr_year)
+    }
   }
   
   # Loop through every week of current investment year
-  for (j in 1:nrow(xts_object_curr_year)){
+  for (j in 1:num_weeks_curr_year){
     
     # To observe how loop is running
     week_num = week_num + 1
     cat("Row" , week_num, "out of", weeks_num_in_period, "\n")
-    
-    
-    # Create vectors to save stock codes for stocks that are in index and have esg sore (current week)
-    vector = c()
-    for(esg_score in esg_scores){
-      vector_name = paste0("stock_codes_with_", esg_score)
-      assign(x = vector_name, value = vector)
-    }
     
     # Data for current week
     for(xts_name in xts_names){
@@ -269,6 +274,7 @@ for(i in 1:length(years)){
     for(esg_score in esg_scores){
       # Get relevant df by name (stores a score Dec data)
       esg_score_xts = get(esg_score)
+      # Duplicate 
       stock_codes_with_esg_score = get(paste0("stock_codes_with_", esg_score))
       
       stock_codes_in_index = colnames(filter_curr_week)[which(as.vector(filter_curr_week)== 1)]
@@ -299,6 +305,7 @@ for(i in 1:length(years)){
       esg_score_avg_mom_score = get(paste0(esg_score, "_avg_mom_score"))
       esg_score_filter = get(paste0(esg_score, "_filter"))
 
+      
       # Calculate number of stocks in one portfolio
       stocks_num_in_esg_score_portfolio = length(stock_codes_with_esg_score) %/% 5
       # esg score we analyze current week
@@ -352,8 +359,15 @@ for(i in 1:length(years)){
           best_g_stocks = esg_score_portfolio_l_stock_codes
         }
         
-      }
- 
+      }#endfor portfolio num
+      assign(x = paste0("stock_codes_with_", esg_score), value = stock_codes_with_esg_score)
+      assign(x = esg_score, value = esg_score_xts)
+      assign(x = paste0(esg_score,"_portfolio_returns"), value = esg_score_portfolio_returns)
+      assign(x = paste0(esg_score,"_avg_esg_score"), value = esg_score_avg_esg_score)
+      assign(x = paste0(esg_score,"_avg_size_score"), value = esg_score_avg_size_score)
+      assign(x = paste0(esg_score,"_avg_btp_score"), value = esg_score_avg_btp_score)
+      assign(x = paste0(esg_score,"_avg_mom_score"), value = esg_score_avg_mom_score)
+      assign(x = paste0(esg_score,"_filter"), value = esg_score_filter)
     }#endfor all esg scores
 
 
@@ -376,6 +390,7 @@ for(esg_score in esg_scores){
   
   esg_score_portfolio_returns$`All best` = all_best_portfolio_returns
   esg_score_portfolio_returns$Benchmark = benchmark_returns
+  assign(x = paste0(esg_score,"_portfolio_returns"), value = esg_score_portfolio_returns)
 }#end for "all best"
 
 
