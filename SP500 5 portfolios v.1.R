@@ -1,11 +1,10 @@
 # Libraries
 # library(stringr)
-# library(lubridate)
-# library(xts)
+library(lubridate)
+library(xts)
 # library(PerformanceAnalytics)
 # library(psych)
 # library(openxlsx)
-
 
 wd ="D:/Projects/IN PROGRESS/GitHub/Industry_lab_user2/"
 source(paste0(wd,"pclasses.R"))
@@ -187,6 +186,10 @@ all_best_stock_filter_df = data.frame(matrix(NA,nrow = weeks_num_in_period, ncol
 colnames(all_best_stock_filter_df) = all_stocks_codes
 all_best_stock_filter = xts(x = all_best_stock_filter_df, order.by = period)
 
+# Create xts object to show number of stocks in index with existing esg score in current week
+stocks_num_with_esg_score_df = data.frame(matrix(NA,nrow = weeks_num_in_period, ncol = esg_scores_num ))
+colnames(stocks_num_with_esg_score_df) = esg_scores
+stocks_num_with_esg_score = xts(x = stocks_num_with_esg_score_df, order.by = period)
 
 # Create statistics df
 # For the whole period (not for a week)
@@ -222,8 +225,8 @@ for(i in 1:length(years)){
   next_year = year + 1
   
   # Data of current year
-  first_date_cur_year = as.Date(paste0(year, "-06-01"))
-  last_date_cur_year = as.Date(paste0(next_year, "-05-31"))
+  first_date_curr_year = as.Date(paste0(year, "-06-01"))
+  last_date_curr_year = as.Date(paste0(next_year, "-05-31"))
   
   xts_names = xts_names[xts_names!= "benchmark_returns"]
   # Create xts objects (filter, stock returns,size/btp/mom scores) for current investment year
@@ -231,13 +234,13 @@ for(i in 1:length(years)){
     # Load data from data container (whole period)
     xts_object = get(xts_name)
     # Get only current investment year
-    xts_object_cur_year = window(x = xts_object, start = first_date_cur_year, end = last_date_cur_year)
-    xts_object_cur_year_name = paste0(xts_name, "_cur_year")
-    assign(x = xts_object_cur_year_name, value = xts_object_cur_year)
+    xts_object_curr_year = window(x = xts_object, start = first_date_curr_year, end = last_date_curr_year)
+    xts_object_curr_year_name = paste0(xts_name, "_curr_year")
+    assign(x = xts_object_curr_year_name, value = xts_object_curr_year)
   }
   
   # Loop through every week of current investment year
-  for (j in 1:nrow(xts_object_cur_year)){
+  for (j in 1:nrow(xts_object_curr_year)){
     
     # To observe how loop is running
     week_num = week_num + 1
@@ -254,12 +257,12 @@ for(i in 1:length(years)){
     # Data for current week
     for(xts_name in xts_names){
       # Load data for current year
-      xts_object_cur_year = get(paste0(xts_name, "_cur_year"))
+      xts_object_curr_year = get(paste0(xts_name, "_curr_year"))
       
       # Create data for current week
-      xts_object_cur_week = xts_object_cur_year[j,]
-      xts_object_cur_week_name = paste0(xts_name, "_cur_week")
-      assign(x = xts_object_cur_week_name, value = xts_object_cur_week)
+      xts_object_curr_week = xts_object_curr_year[j,]
+      xts_object_curr_week_name = paste0(xts_name, "_curr_week")
+      assign(x = xts_object_curr_week_name, value = xts_object_curr_week)
     }
     
     # For each type of score: esgcs, esg, s,g, equal_esg
@@ -268,10 +271,10 @@ for(i in 1:length(years)){
       esg_score_xts = get(esg_score)
       stock_codes_with_esg_score = get(paste0("stock_codes_with_", esg_score))
       
+      stock_codes_in_index = colnames(filter_curr_week)[which(as.vector(filter_curr_week)== 1)]
+      
       # Loop through all stocks
-      for(stock_code in all_stocks_codes){
-        # Check whether stock is in index current week
-        if(filter_cur_week[, stock_code] == 1){
+      for(stock_code in stock_codes_in_index){
           # Returns stock code or numeric(0)
           stock_code_with_any_esg_score = grep(pattern = stock_code, x = colnames(esg_score_xts), value = T)    
           # In case a stock has a score or NA
@@ -284,55 +287,56 @@ for(i in 1:length(years)){
               stock_codes_with_esg_score = c(stock_codes_with_esg_score, stock_code)
             }#endif not NA
           }#endif not esg exists
-        }#endif in curr week
-      }#endfor all stocks      
-    
+      }#endfor all stocks
+
+      stocks_num_with_esg_score[week_num, esg_score] = length(stock_codes_with_esg_score)
+      
       # Load data
-      
-      stat_curr_week_names = c("_portfolio_returns",
-                               avg_scores,
-                               "_filter")
-      
-      for(stat_curr_week_name in stat_curr_week_names){
-        xts_object_name = paste0(esg_score, stat_curr_week_name)
-        assign(x = xts_object_name, value = get(xts_object_name))
-      }
-      
+      esg_score_portfolio_returns = get(paste0(esg_score, "_portfolio_returns"))
+      esg_score_avg_esg_score = get(paste0(esg_score, "_avg_esg_score"))
+      esg_score_avg_size_score = get(paste0(esg_score, "_avg_size_score"))
+      esg_score_avg_btp_score = get(paste0(esg_score, "_avg_btp_score"))
+      esg_score_avg_mom_score = get(paste0(esg_score, "_avg_mom_score"))
+      esg_score_filter = get(paste0(esg_score, "_filter"))
+
       # Calculate number of stocks in one portfolio
       stocks_num_in_esg_score_portfolio = length(stock_codes_with_esg_score) %/% 5
       # esg score we analyze current week
-      esg_score_cur_week = esg_score_xts[i,stock_codes_with_esg_score]
+      esg_score_curr_week = esg_score_xts[i,stock_codes_with_esg_score]
 
       
       for(l in 1:portfolios_num){
         
         # Find constituents of portfolio 
-        largest_esg_score_portfolio_l = sort(esg_score_cur_week, decreasing = F)[stocks_num_in_esg_score_portfolio]
-        esg_score_portfolio_l = which(esg_score_cur_week <= largest_esg_score_portfolio_l, arr.ind = F)
+        largest_esg_score_portfolio_l = sort(as.vector(esg_score_curr_week), decreasing = F)[stocks_num_in_esg_score_portfolio]
+        esg_score_portfolio_l_ind = which(esg_score_curr_week <= largest_esg_score_portfolio_l)
         # Could be several scores with the same value on the "border"
-        esg_score_portfolio_l = esg_score_portfolio_l[1:stocks_num_in_esg_score_portfolio]
-        esg_score_portfolio_l_stock_codes = colnames(esg_score_portfolio_l)
+        esg_score_portfolio_l_ind = esg_score_portfolio_l_ind[1:stocks_num_in_esg_score_portfolio]
+        esg_score_portfolio_l= esg_score_curr_week[, esg_score_portfolio_l_ind]
+        
+        esg_score_portfolio_l_stock_codes  = colnames(esg_score_portfolio_l)
+        # esg_score_portfolio_l_stock_codes = colnames(as.data.frame(esg_score_curr_week)[esg_score_portfolio_l_ind])
         
         # Calculate portfolio return current week
         esg_score_portfolio_returns[week_num,l] = mean(stock_returns_curr_week[, esg_score_portfolio_l_stock_codes])
        
         # Calculate average esg score in portfolio current week
-        esg_score_avg_esg_score[week_num,l] = mean(esg_score_portfolio_l)
+        esg_score_avg_esg_score[week_num,l] = mean(esg_score_portfolio_l, na.rm = T)
         
         # Calculate average size score in portfolio current week
-        esg_score_avg_size_score[week_num,l] = mean(size_score_curr_week[, esg_score_portfolio_l_stock_codes])
+        esg_score_avg_size_score[week_num,l] = mean(size_score_curr_week[, esg_score_portfolio_l_stock_codes], na.rm = T)
         
         # Calculate average btp score in portfolio current week
-        esg_score_avg_btp_score[week_num,l] = mean(btp_score_curr_week[, esg_score_portfolio_l_stock_codes])
+        esg_score_avg_btp_score[week_num,l] = mean(btp_score_curr_week[, esg_score_portfolio_l_stock_codes], na.rm = T)
         
         # Calculate average momentum score in portfolio current week
-        esg_score_avg_mom_score[week_num,l] = mean(mom_score_curr_week[, esg_score_portfolio_l_stock_codes])
+        esg_score_avg_mom_score[week_num,l] = mean(mom_score_curr_week[, esg_score_portfolio_l_stock_codes], na.rm = T)
         
-        
+        # Fill filter
         esg_score_filter[week_num, esg_score_portfolio_l_stock_codes] = l
 
         # Replace esg scores in portfolio with very big number
-        esg_score_cur_week[esg_score_portfolio_l_stock_codes] = 1000000
+        esg_score_curr_week[esg_score_portfolio_l_stock_codes] = 1000000
         
         
         # Find best E stocks
@@ -356,16 +360,14 @@ for(i in 1:length(years)){
     # Find number of all best stocks
     all_best_stocks = Reduce(intersect, list(best_e_stocks, best_s_stocks, best_g_stocks))
     all_best_stocks_num[week_num,"Number of stocks"] = length(all_best_stocks)
+    # Fill filter
+    all_best_stock_filter[week_num, all_best_stocks] = 1
     
     # Find returns of all best stocks
-    all_best_portfolio_returns[week_num,"Return"] =  mean(stock_returns[week_num, all_best_stocks])
-    
-    # Find stock codes in this portfolio
-    all_best_stock_filter[week_num, all_best_stocks] = 1
+    all_best_portfolio_returns[week_num,"Return"] =  mean(stock_returns_curr_week[, all_best_stocks])
 
-  }  
-    
-}
+  }#end of curr. week
+}#end of curr. year
 
 # Add All Best Portfolio returns and Benchmark returns
 for(esg_score in esg_scores){
@@ -374,7 +376,26 @@ for(esg_score in esg_scores){
   
   esg_score_portfolio_returns$`All best` = all_best_portfolio_returns
   esg_score_portfolio_returns$Benchmark = benchmark_returns
-}
+}#end for "all best"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
