@@ -60,7 +60,6 @@ all_stocks_codes = colnames(stock_returns)
 weeks_num_in_period = nrow(stock_returns)
 period = index(stock_returns)
 
-
 # Read monthly ESG scores
 esg_scores_df = read.csv(file = paste0(wd,"SPCOMP_scores_monthly.csv"),header = TRUE, sep =";", dec = ",")
 # Convert to the best suitable format
@@ -133,6 +132,8 @@ extended_portfolio_names = c(portfolio_names,
 extended_portfolios_num = length(extended_portfolio_names)
 
 # Create xts objects to save results
+xts_object1 = xts(x = matrix(NA,nrow = weeks_num_in_period, ncol = extended_portfolios_num), order.by = period)
+colnames(xts_object1) = extended_portfolio_names
 
 # Create xts object to save portfolio returns
 df1 = data.frame(matrix(NA,nrow = weeks_num_in_period, ncol = extended_portfolios_num))
