@@ -1,0 +1,1335 @@
+---
+title: "GCCR Factor Influence"
+author: "Aliaksandr Panko"
+date: "August 20, 2019"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.width = 12,
+                      fig.height = 6,
+                      out.width = "100%"
+                      ,out.height= "100%"
+                      )
+```
+
+GCCR - Global Compact Compliance Rules.
+========================================================
+ <!-- TO USE 2 or more columns -->
+ 
+<!-- <style> -->
+<!-- .column-left{ -->
+<!--   float: left; -->
+<!--   width: 50%; -->
+<!--   text-align: left; -->
+<!-- } -->
+<!-- .column-right{ -->
+<!--   float: right; -->
+<!--   width: 50%; -->
+<!--   text-align: left; -->
+<!-- } -->
+<!-- .column-mid{ -->
+<!--   float: center; -->
+<!--   width: 100%; -->
+<!--   height: 70%; -->
+<!--   text-align: left; -->
+<!-- } -->
+<!-- </style> -->
+
+<!-- <div class="column-left"> -->
+<!-- </div> -->
+<!-- <div class="column-right"> -->
+<!-- </div> -->
+
+
+
+GCCR is the set of rules. Companies that fulfill these rules are considered as "good"
+
+The analysis includes 5 universes:
+
+- Equity USA (MSCI index).
+- Equity Europe (MSCI index).
+- Equity Emerging markets (MSCI index).
+- Bonds (manually splitted into Junk Bonds and Investment Grade Bonds. The universe is represented by the bank of america merrill corporate index for the U.S. and Europe).
+
+The MSCI Indices are designed to measure the performance of the large- and
+mid-cap segments of a market.
+
+As of December 2018:
+
+- For the  USA market it covered more
+than 600 constituents and approximately 85% of the free float-adjusted market
+capitalization in the U.S.
+
+- The MSCI Europe Index included 15 developed markets having more than 400 constituents and covered approximately 85% of
+the free float-adjusted market capitalization across the European developed market equity universe.
+
+- The MSCI Emerging Markets Index included securities in 26 Emerging Markets having more than 1100 constituents and covered approximately 85% of the free
+float-adjusted market capitalization in each country.
+
+
+Data Features
+========================================================
+
+- Sustainability filter is actually not only GCCR and is updated monthly.
+- The filter was filled backward from Feb. 2016 (first time).
+- There were unexpected jumps in August-September 2018. This looked like some data features/issues.
+- We updated data container, now it is backward filled from 2018.
+- Still there are data inconsistency in containers (the universes are not the same any more). Corrected manually.
+- There are 2 sources of unreliable solition caused by backward filling. 
+- Data Issue 1: the scores are not changing significantly. Since we backward filled GCCR data with recent "scores" we ignore the fact that they could improve during last 10 years.
+- Data Issue 2: the look-ahead (survivorship) bias. GCCR filter has 3 values: 1,0,NA for every date. Values 1 and 0 are set to index constituents and NAs are set elsewhere. Applying GCCR (that was backward filled) and investing only in 1-s 10 years ago gives you the companies that survived in the index until 2018, additionally ignoring some other companies that could also have 1-s that time but just did not survive until 2018.
+
+
+USA: Number of Companies in the Universe
+========================================================
+
+```{r, include=FALSE}
+load(file.choose())
+library(PerformanceAnalytics)
+library(xts)
+
+
+plot(l$ratios$USA[,1:4],
+       main = "Number of companies after filtration",
+       cex.lab=1.5,
+       cex.axis=1.5,
+       cex.main=1.5,
+       cex.sub = 1.5,
+       col = c("black", "green", "blue", "red"))
+```
+```{r}
+addLegend(legend.loc = "topleft",
+         legend.names = c("index", "index w/o NA","number of NA", "index w/o NA and 0"),
+         lty= rep(1, times = 4),
+         lwd= rep(2.5, times = 4),
+         col = c("black", "green", "blue", "red"),
+         cex = 1.5)
+```
+  
+
+USA: Number of Companies in the Universe. Summary
+========================================================
+- "index" is MSCI. As expected, the value is around 600.
+- We can see a pattern in NA: the number of NA gradually decreases. This is expected, since caused by construction of SustFilter, which was backward-filled. NA value in SustFilter is assigned to a company that did not survive till 2018 (date of backward-filling). Obviously, the number of companies that did not survive till 2018 in, say, 2006 is much greater than this number in 2017.
+- "index w/o NA" is MSCI universe without companies, which have NA in SustFilter container. Obviously, in the end we have the same value as index (by construction of SustFilter). Looking at the difference between black and green lines we can see how many companies are not survived until 2018. We can notice that in 2006 we ignore around 50% of companies, in 2010 around 30% and from 2015 less than 10%.
+- The difference between red line and green line shows  how many companies are excluded just because of SustFilter. It's around 17%. 
+- Notice the jump in red line: the jump means that suddenly number of "good" companies increased by around 80 = 16% (huge!). This could have been explained by increase in "index", but we do not see it. Also we do not see any drops in NA. However, this could be explained by switching to "rating +" SustFilter universe.
+- Final hypothesis: initially we had SustFilter data for S&P500 (that explaines 17% hard filtering, when only 10% is supposed to be filtered), than in the beggining of 2019 we switched to "rating +" (more companies became available, so we have a jump). After that all the NAs were set to 0 (that explaines why we do not see a drop in NAs). Then we decided to backward fill the data from 2018 to have NAs (so we have correct NAs picture before 2018 and wrong after)
+
+USA: Ratios
+========================================================
+
+```{r,include=FALSE}  
+plot(l$ratios$USA[,5:6],
+     main = "Number of companies after filtration",
+     cex.lab=1.5,
+     cex.axis=1.5,
+     cex.main=1.5,
+     col = c("black", "red"))
+```
+```{r}
+
+addLegend(legend.loc = "topleft", on = 1,
+          legend.names = c("Frequency Ratio", "Market Cap. Ratio"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "red"),
+          cex = 1.5)
+```
+
+
+
+USA: Ratios. Summary
+========================================================
+- The fact that ratio is increasing is ok and is driven by SustFilter construction (just less companies are remained going backward).
+- The jump is caused by the same reason: sudden jump in SustFilter (16% companies are added).
+
+
+EUR: Number of Companies in the Universe
+========================================================
+
+```{r, include=FALSE}
+  
+plot(l$ratios$EUR[,1:4],
+     main = "Number of companies after filtration",
+     cex.lab=1.5,
+     cex.axis=1.5,
+     cex.main=1.5,
+     cex.sub = 1.5,
+     col = c("black", "green", "blue", "red"))
+```
+```{r}
+  
+addLegend(legend.loc = "bottomleft", on = 1,
+          legend.names = c("index", "index w/o NA","number of NA", "index w/o NA and 0"),
+          lty= rep(1, times = 4),
+          lwd= rep(2.5, times = 4),
+          col = c("black", "green", "blue", "red"),
+          cex = 1.5)
+  
+
+
+```
+
+EUR: Number of Companies in the Universe. Summary
+========================================================
+- Index changed for some reason. (probably stoxx600 -> MSCI) The switch was in May 2018.
+- The rest is the same as with USA, but the number of "good" companies before a jump first dropped down by 20% and then jumpped up by more than 100 (33%) companies during 2018. The drop starts exactly in May 2018 and recovery was in Oct-Nov 2018.
+
+
+EUR: Ratios
+========================================================
+
+```{r, include=FALSE}
+plot(l$ratios$EUR[,5:6],
+     main = "Number of companies after filtration",
+     cex.lab=1.5,
+     cex.axis=1.5,
+     cex.main=1.5,
+     col = c("black", "red"))
+```
+```{r}
+
+addLegend(legend.loc = "topleft", on = 1,
+          legend.names = c("Frequency Ratio", "Market Cap. Ratio"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "red"),
+          cex = 1.5)
+
+```
+
+EUR: Ratios. Summary
+========================================================
+-  Here the picture looks quite bad: we lose from 40% to 50% of companies using the filter.
+
+
+
+Emerging Markets: Number of Companies in the Universe
+========================================================
+
+```{r, include=FALSE}
+plot(l$ratios$EM[,1:4],
+       main = "Number of companies after filtration",
+       cex.lab=1.5,
+       cex.axis=1.5,
+       cex.main=1.5,
+       cex.sub = 1.5,
+       col = c("black", "green", "blue", "red"))
+```
+```{r}
+  
+  addLegend(legend.loc = "topleft", on = 1,
+            legend.names = c("index", "index w/o NA","number of NA", "index w/o NA and 0"),
+            lty= rep(1, times = 4),
+            lwd= rep(2.5, times = 4),
+            col = c("black", "green", "blue", "red"),
+            cex = 1.5)
+
+
+```
+
+Emerging Markets: Number of Companies in the Universe. Summary
+========================================================
+- Significant change in the index more than 200 companies have been added. That was in May 2018. Drop was in August 2018.
+- There are no "decrease" pattern is NA... This can mean that the index consists of the same companies last 12 years.
+- During the index expansion we did not have SustFilter data for the companies, however, shortly after the data was available. This fact is represented by a jump with a drop in NA.
+- Red line experiences a huge jump in the very end! Suddenly around 400 companies (+ 80%) became "good". This fact should be checked (why?) In my opinion this is just a lag in information (initial information was not correct, when the index expanded).
+
+
+Emerging Markets: Ratios
+========================================================
+
+```{r,include=FALSE}
+  plot(l$ratios$EM[,5:6],
+       main = "Number of companies after filtration",
+       cex.lab=1.5,
+       cex.axis=1.5,
+       cex.main=1.5,
+       col = c("black", "red"))
+```
+```{r}
+  
+  addLegend(legend.loc = "topleft", on = 1,
+            legend.names = c("Frequency Ratio", "Market Cap. Ratio"),
+            lty= rep(1, times = 2),
+            lwd= rep(2.5, times = 2),
+            col = c("black", "red"),
+            cex = 1.5)
+  
+```
+
+Emerging Markets: Ratios. Summary
+========================================================
+- Here the drop and the jump are explained by the index expansion and (in my opinion) default 0 in SustFilter, which than were corrected with 1.
+- Approximately 80% are covered!
+
+
+Junk Bonds: Number of Companies in the Universe
+========================================================
+
+```{r,include=FALSE}
+plot(l$ratios$JBonds[,1:4],
+       main = "Number of companies after filtration",
+       cex.lab=1.5,
+       cex.axis=1.5,
+       cex.main=1.5,
+       cex.sub = 1.5,
+       col = c("black", "green", "blue", "red"))
+```
+```{r}
+  
+  addLegend(legend.loc = "left", on = 1,
+            legend.names = c("index", "index w/o NA","number of NA", "index w/o NA and 0"),
+            lty= rep(1, times = 4),
+            lwd= rep(2.5, times = 4),
+            col = c("black", "green", "blue", "red"),
+            cex = 1.5)
+
+```
+
+
+Junk Bonds: Number of Companies in the Universe. Summary
+========================================================
+- We can see that for junk bonds SustFilter has around 90% of NA.
+- No "decrease" pattern in NA.
+- around 50% are filtered among those which have SustFilter data. In the end the percentage goes to around 10%.
+
+Junk Bonds: Ratios
+========================================================
+
+
+```{r,include=FALSE}
+plot(l$ratios$JBonds[,5:6],
+       main = "Number of companies after filtration",
+       cex.lab=1.5,
+       cex.axis=1.5,
+       cex.main=1.5,
+       col = c("black", "red"))
+```
+```{r}
+  
+  addLegend(legend.loc = "topleft", on = 1,
+            legend.names = c("Frequency Ratio", "Market Cap. Ratio"),
+            lty= rep(1, times = 2),
+            lwd= rep(2.5, times = 2),
+            col = c("black", "red"),
+            cex = 1.5)
+  
+```
+
+
+Junk Bonds: Ratios
+========================================================
+- Surprisingly this small amount of companies covers in the end more than 60% of the market, however, before the percentage was still around 35%.
+
+
+Investment Grade Bonds: Number of Companies in the Universe
+========================================================
+
+
+```{r,include=FALSE}
+  plot(l$ratios$IGBonds[,1:4],
+       main = "Number of companies after filtration",
+       cex.lab=1.5,
+       cex.axis=1.5,
+       cex.main=1.5,
+       cex.sub = 1.5,
+       col = c("black", "green", "blue", "red"))
+```
+```{r}
+  
+  addLegend(legend.loc = "topleft", on = 1,
+            legend.names = c("index", "index w/o NA","number of NA", "index w/o NA and 0"),
+            lty= rep(1, times = 4),
+            lwd= rep(2.5, times = 4),
+            col = c("black", "green", "blue", "red"),
+            cex = 1.5)
+
+```
+
+Investment Grade Bonds: Number of Companies in the Universe. Summary
+========================================================
+- We can see in the end that index was changed (in terms of constituents). This can be noticed by looking at NA line and having in mind SustFilter construction. The change was during the 2018.
+- Around 10% is filtered by SustFilter (0 vs 1).
+
+
+Investment Grade Bonds: Ratios
+========================================================
+
+```{r,include=FALSE}
+plot(l$ratios$IGBonds[,5:6],
+     main = "Number of companies after filtration",
+     cex.lab=1.5,
+     cex.axis=1.5,
+     cex.main=1.5,
+     col = c("black", "red"))
+```
+```{r}
+  
+addLegend(legend.loc = "topleft", on = 1,
+          legend.names = c("Frequency Ratio", "Market Cap. Ratio"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "red"),
+          cex = 1.5)
+```
+
+Investment Grade Bonds: Ratios. Summary
+========================================================
+- Ther is a jump, but the jump is caused by inceare in number of available companies during 2018.
+
+
+USA. The MSCI index performance (Original VS Equal-Weighted)
+========================================================
+
+```{r}
+chart.CumReturns(l$factors_perf$USA[,c(1,2)], main = "USA: The Small Firm Effect", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+
+```
+
+USA. The MSCI index performance (Original VS Equal-Weighted). Summary
+========================================================
+- The equal-weighted index significantly (2 times) outperforms the original one. This is well-known The Small Firm Effect(equal-weighted index bias). 
+- Since the original index accounts for the size, this outperformance means that on average smaller companies performed better.
+- Since all the factors are based on equal-weighted approach, the corresponding benchmark should be used. Otherwise, the size effect and a factor effect cannot be separated.
+
+USA. The MSCI index performance (Survivorship Bias and Filtering)
+========================================================
+
+```{r}
+chart.CumReturns(l$ind_perf$USA, main = "USA: Survivorship Bias and Filtering", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+USA. The MSCI index performance (Survivorship Bias and Filtering). Summary
+========================================================
+- This chart represents the influence of the Survivorship (look-ahead) bias and the filtering effect.
+- We can see that index w/o NA significantly outperforms equal-weighted original index. This difference represents the Survivorship (look-ahead) bias.
+- This is caused by look-ahead bias, since investment is done only in strong companies.
+- There is no noticeable difference in performance between red and green lines. This means that filtering does not help.
+- However, there is the sampling bias. Here we check the filtering effect only among survived companies (sampling bias). There is no possibility to say anything about the influence of the filter on the companies, which are not survived.
+- This means the filtering effect in this project is valid ONLY for survived (best, strongest) companies.
+
+EUR. The MSCI index performance (Original VS Equal-Weighted)
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$EUR[,c(1,2)], main = "EUR: The Small Firm Effect", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+
+```
+
+EUR. The MSCI index performance (Original VS Equal-Weighted). Summary
+========================================================
+- Equal-weighted index outperforms the original one almost 2 times.
+- However, the index performs worse than in the U.S. market (also 2 times).
+
+EUR. The MSCI index performance (Survivorship Bias and Filtering)
+========================================================
+```{r}
+chart.CumReturns(l$ind_perf$EUR, main = "EUR: Survivorship Bias and Filtering", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+EUR. The MSCI index performance (Survivorship Bias and Filtering). Summary
+================================================
+- The picture is fairly the same as in USA case: strong survivorship bias (1.5 times) and the filter does not influence the performance.
+- The benchmark here is the equal-weighted original index.
+
+
+EM. The MSCI index performance (Original VS Equal-Weighted)
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$EM[,c(1,2)], main = "EM: The Small Firm Effect", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+
+```
+
+EM. The MSCI index performance (Original VS Equal-Weighted). Summary
+========================================================
+- The same picture: the equal-weighted index significantly (1.5 times) outperforms the original one.
+
+
+EM. The MSCI index performance (Survivorship Bias and Filtering)
+========================================================
+```{r}
+chart.CumReturns(l$ind_perf$EM, main = "EM: Survivorship Bias and Filtering", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+EM. The MSCI index performance (Survivorship Bias and Filtering). Summary
+========================================================
+- The survivorship bias here is also strong (1.5 times).
+- Here filtering helps a lot (more than 1.5 times better than Survived portfolio).
+- The benchmark here is the equal-weighted original index.
+
+JBonds. The MSCI index performance (Survivorship Bias and Filtering)
+========================================================
+```{r}
+chart.CumReturns(l$ind_perf$JBonds, main = "JBonds: Survivorship Bias and Filtering", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+JBonds. The MSCI index performance (Survivorship Bias and Filtering). Summary
+========================================================
+- For Junk bonds there is no an original benchmark.
+- The look-ahead bias does not help, meaning that equity performance does not really improve bond performance.
+- Filtering also produces robust outperformance compared to the Survived case.
+- The benchmark here is the equal-weighted original index.
+
+
+IGBonds. The MSCI index performance (Survivorship Bias and Filtering)
+========================================================
+```{r}
+chart.CumReturns(l$ind_perf$IGBonds, main = "IGBonds: Survivorship Bias and Filtering", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+IGBonds. The MSCI index performance (Survivorship Bias and Filtering). Summary
+========================================================
+- For Investment Grade Bonds there is no an original benchmark.
+- The Survivorship bias does not change the performance.
+- Filtering also does not help much ("good" companies are a bit better). However, we can notice that green line is always a bit better than red line, meaning that the pattern is robust.
+- The benchmark here is the equal-weighted original index.
+
+Conclusions Part 1: 
+========================================================
+- In the very end of the used period (w/o backward filling) the data demonstrate suspicious behavior.
+- The equity data suffers from strong look-ahead (survivorship) bias.
+- The look-ahead (survivorship) bias does not exist in JBons and IGBonds universes. It means that equity performance is not highly correlated with bonds performance.
+- For equities equal-weighted index should be used as a benchmark (the difference is huge).
+- Only in EM filtering helps significantly. There is also some help in JBons and IGBonds universes.
+
+
+Average Scores and Factors Construction Methodology
+========================================================
+- The original scores are normalized in range [0,1]. Having 20% cutoff level, this means that average score for the long and the short sides of a portfolio must be roughly 0.9 and 0.1 correspondingly.
+- The factors (value, momentum and size) are constructed as follows: first SustFilter is applied and after that 20% threshold. Then the long portfolio contains the top 20% (in terms of a score) of companies and short contains bottom 20%.
+- Since the data contains the survivirship (look-ahead) bias the number of companies in the long and short parts are different and increasing with time.
+- Moreover, until 2018 (after the data is not stable) the average score is expected to converge to 0.9 and 0.1, since more and more companies become available. This is valid only if the filter does not have a robust influence.
+ 
+
+USA. Average Scores. Momentum
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$USA[,1:6] ,
+     main = "USA: Average GCCR Filtered Momentum Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Mom L", "Mom S", "MomGCCR L", "MomGCCR S", "MomSurv L", "MomSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+USA. Average Score. Momemtum. Summary
+========================================================
+- Survived (0 and 1): TOP: no significant effect, BOT: on average > 0.1 (0.13).
+- Good (Only 1): TOP&BOT: no significant effect compared with the Survived case.
+- These facts tell us that on average firms, which survive in the index, tend to have higher momentum score. This makes sence and goes along with the general idea of surviving in the index.
+
+USA. Average Scores. Size
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$USA[,7:12] ,
+     main = "USA: Average GCCR Filtered Size Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Size L", "Size S", "SizeGCCR L", "SizeGCCR S", "SizeSurv L", "SizeSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+USA. Average Score. Size. Summary
+========================================================
+- Survived (0 and 1): Here the picture is even more robust: survived companies used to have higher size score, meaning that these companies were big (only the biggest survived).
+- Good (Only 1): There is no effect.
+
+
+USA. Average Scores. Value
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$USA[,13:18] ,
+     main = "USA: Average GCCR Filtered Value Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Value L", "Value S", "ValueGCCR L", "ValueGCCR S","ValueSurv L", "ValueSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+USA. Average Score. Value.Summary
+========================================================
+- Survived (0 and 1): Here we also have a consictent result for TOP: we know that for the last 10 years value factor has been performing bad, so this pattern is reflected here. The survived companies used to have smaller value scores, meaning that they were in some sence "more growth".
+- Good (Only 1): There is no effect.
+
+EUR. Average Scores. Momentum
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$EUR[,1:6] ,
+     main = "EUR: Average GCCR Filtered Momentum Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Mom L", "Mom S", "MomGCCR L", "MomGCCR S", "MomSurv L", "MomSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+EUR. Average Score. Momemtum. Summary
+========================================================
+- Absolutely same results as in USA market.
+- Survived (0 and 1): TOP: no significant effect, BOT: on average > 0.1.
+- Good (Only 1): TOP&BOT: no significant effect compared with survived.
+- These facts tell us that on average firms, which survive in the index, tend to have higher momentum score. This makes sence and goes along with the general idea of surviving in the index.
+
+
+EUR. Average Scores. Size
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$EUR[,7:12] ,
+     main = "EUR: Average GCCR Filtered Size Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Size L", "Size S", "SizeGCCR L", "SizeGCCR S", "SizeSurv L", "SizeSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+
+EUR. Average Score. Size. Summary
+=======================================================
+- Survived (0 and 1): Here we can notice the smallest companies, which are still in index used to be bigger (quite logical). We also can see the drop in size in 2008.
+- Good (Only 1): TOP: There is no convergence in the end. This means that filter eliminates some of the biggest companies. Moreover, this pattern is robust after 2008 (before the companies used to be relatively bigger). BOT: no effect.
+
+
+EUR. Average Scores. Value
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$EUR[,13:18] ,
+     main = "EUR: Average GCCR Filtered Value Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Value L", "Value S", "ValueGCCR L", "ValueGCCR S", "ValueSurv L", "ValueSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+EUR. Average Score. Value. Summary
+========================================================
+- There is no any pattern here.
+- Survived (0 and 1): no effect.
+- Good (Only 1): no effect.
+
+
+EM. Average Scores. Momentum
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$EM[,1:6] ,
+     main = "EM: Average GCCR Filtered Momentum Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Mom L", "Mom S", "MomGCCR L", "MomGCCR S", "MomSurv L", "MomSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+EUR. Average Score. Momentum. Summary
+========================================================
+- Here we can notice the weakest in terms of momentum companies used to be stronger. Actually, this means that the companies which survived in the index for the last 10 years and currently are on the bottom are slowing down.
+- Top companies are persistent. They were strong and they are strong.
+- Survived (0 and 1): no effect.
+- Good (Only 1): TOP: higher volatitily, BOT: average score in on average > 0.1 (there is effect).
+
+
+
+EM. Average Scores. Size
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$EM[,7:12] ,
+     main = "EM: Average GCCR Filtered Size Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Size L", "Size S", "SizeGCCR L", "SizeGCCR S", "SizeSurv L", "SizeSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+EM. Average Score. Size. Summary
+========================================================
+- Both top and bottom companies in the index used to be relatively bigger, however. bottom's pattern is much stronger.
+- Survived (0 and 1): TOP almost no effect. The companies used to be a bit smaller. BOT: no effect after 2008. Before 2008 the companies used to be a bit bigger.
+- Good (Only 1): Huge effect: Filter tends to eiminate smaller companies.
+
+
+
+EM. Average Scores. Value
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$EM[,13:18] ,
+     main = "EM: Average GCCR Filtered Value Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Value L", "Value S", "ValueGCCR L", "ValueGCCR S", "ValueSurv L", "ValueSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+EM. Average Score. Value. Summary
+========================================================
+- Survived (0 and 1): TOP: here we also have a consictent result: we know that for the last 10 years value factor has been performing bad, so this pattern is reflected here. The survived companies used to have smaller value scores, meaning that they were in some sence "more growth". Bottom portfolio: companies are persistent in terms of value score (the pattern is weak).
+- Good (Only 1): TOP: stronger pattern, BOT: fairly no effect.
+
+JBonds. Average Scores. Momentum
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$JBonds[,1:6] ,
+     main = "JBonds: Average GCCR Filtered Momentum Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Mom L", "Mom S", "MomGCCR L", "MomGCCR S","MomSurv L", "MomSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+JBonds. Average Scores. Momentum. Summary
+========================================================
+- Survived (0 and 1): TOP: no effect, BOT: the compnaies tend to have < 0.1 score. Survived companies used to have lower momentum! 
+- Good (Only 1): The picture shows that the behavior of the top and the bottom firms in terms of momentum remains more or less the same last 10 years.
+
+JBonds. Average Scores. Size
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$JBonds[,7:12] ,
+     main = "JBonds: Average GCCR Filtered Size Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Size L", "Size S", "SizeGCCR L", "SizeGCCR S", "SizeSurv L", "SizeSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+JBonds. Average Scores. Size. Summary
+========================================================
+- There is a feature: there is no convergence to 0.9. This is ok, since the normalization of the size factor is done for the whole universe (JBonds and IGBonds). Taking into account only JBOnds the average score is not supposed to be 0.9 anymore. Moreover, it is supposed to be lower than 0.9, since JBonds are issued by smaller companies.
+- Survived (0 and 1): The top portfolio does not corverge to 0.9. This means that the look-ahead bias eliminates the biggest companies. This pattern is robust, meaning that the top companies were consistently relatively smaller than 0.9. BOT: look-ahead bias leaves out smaller companies and the convergence is too steeply (within 1 month). This fact can be explained by increaded universe in 2019. Accepting this hypothesis, size score was relatively stable.
+- Good (Only 1): TOP&BOT: SustFilter leaves out smaller companies. BOT: The difference in sizes "before" and "now" is too big. 
+
+
+IGBonds. Average Scores. Momentum
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$IGBonds[,1:6] ,
+     main = "IGBonds: Average GCCR Filtered Momentum Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Mom L", "Mom S", "MomGCCR L", "MomGCCR S", "MomSurv L", "MomSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+
+IGBonds. Average Scores. Momentum. Summary
+========================================================
+- Survived (0 and 1): TOP: the look-ahead bias tends to eliminate the high-momentum companies. BOT: the look-ahead bias tends to eliminate the low-momentum companies (effect is bigger). This pattern is robust. There is no convergence.
+- Good (Only 1): TOP: no effect, BOT: survivorship bias effect is increased a bit.
+
+IGBonds. Average Scores. Size
+========================================================
+```{r,include=FALSE}
+
+plot(l$avg_scores$IGBonds[,7:12] ,
+     main = "IGBonds: Average GCCR Filtered Size Scores",
+     cex.lab = 1.5,
+     cex.axis = 1.5,
+     cex.main = 1.5,
+     col = c("black", "green", "blue", "red", "blueviolet", "brown"))
+```
+```{r}
+  
+addLegend(legend.loc = "left", on = 1,
+          legend.names = c("Size L", "Size S", "SizeGCCR L", "SizeGCCR S", "SizeSurv L", "SizeSurv S"),
+          lty= rep(1, times = 2),
+          lwd= rep(2.5, times = 2),
+          col = c("black", "green", "blue", "red", "blueviolet", "brown"),
+          cex = 1.5)
+  
+```
+
+
+IGBonds. Average Scores. Size
+========================================================
+- Survived (0 and 1): Here the difference is huge! The look-ahead bias consistently drops smaller companies. Except this, the relative score remains more or less constant, meaning that the companies in both portfolios (top and bottom) were relatively (compared with the peers) the same in terms of size.
+- Good (Only 1): TOP: no effect, BOT: survivorship bias effect is increased.
+- There is a feature: the BOT score is so high since the normalization of the size factor is done for the whole universe. Taking into account only IG BOnds the average score is not supposed to be 0.1 anymore. Moreover, it is supposed to be higher than 0.1 since IG Bonds are issued by big companies.
+
+
+Conclusions: Part 2
+========================================================
+- For equities there is a weak pattern in momentum: companies that are in index now used to have a bit higher momentum, compared with peers.
+- The is strong pattern in size: survived companies used to have higher size score, meaning that these companies were big (only the biggest survived).
+- There is a weak pattern in value: companies that are in index now used to have a bit lower value, compared with peers.
+- In the U.S. market and Europe (except of the TOP size) filtering does not have any influence.
+- In the Emerging Markets and both bonds filtering has an effect.
+
+The Factors Performance. USA. GCCR
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$USA[,c(2,6)], main = "USA: GCCR factor performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+
+```
+
+The Factors Performance. USA. GCCR. Summary
+========================================================
+- The factor is designed as follows: go long with all 1 and short all 0. Since 1 or 0 does not really matter if you know that the company still survived in the index, the return is expected to be around 0.
+- However, the recent data (no spoiled by backward filling) could be promissing. Here we see an increase.
+- The benchmark here is equal-weighted index.
+
+
+The Factors Performance. USA. Value
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$USA[,c(3,7,10)], main = "USA: Value factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Performance. USA. Value. Summary
+========================================================
+- Original: poor performance (this is a fact).
+- Survived (0 and 1): the performance is significantly improved by the survivorship bias.
+- Good (Only 1): The filter lowers the performance compared with survived case.
+
+
+The Factors Performance. USA. Momentum
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$USA[,c(4,8,11)], main = "USA: Momentum factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Performance. USA. Momentum. Summary
+========================================================
+- Original: poor performance (negative).
+- Survived (0 and 1): Survived portfolio performed worse than just original one.
+- Good (Only 1):  the same as in the survived case. (no effect).
+
+The Factors Performance. USA. Size
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$USA[,c(5,9,12)], main = "USA: Size factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+
+The Factors Performance. USA. Size. Summary
+========================================================
+- Survived (0 and 1): The original size factor performed significantly better than the Survived one, which shows negative performance all the time.
+- Good (Only 1): there is no additional effect.
+
+
+The Factors Performance. EUR. GCCR
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$EUR[,c(2,6)], main = "EUR: GCCR factor performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+
+```
+
+The Factors Performance. EUR. GCCR. Summary
+========================================================
+- The performance is negative, but still around 0. This is expected in case if filtering does not help.
+- Negative performance means that 1s portfolio performed worse than 0s. One should keep in mind backward filling bias (all companies have survived).
+- Interestingly, after 2016 (with the most recent data) the trend goes down, meaning that 0s portfolio performs a bit better.
+- The benchmark here is equal-weighted index.
+
+The Factors Performance. EUR. Value
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$EUR[,c(3,7,10)], main = "EUR: Value factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Performance. EUR. Value. Summary
+========================================================
+- Survived (0 and 1): The survivorship bias lowers the performance.
+- Good (Only 1): The effect is increased.
+
+
+The Factors Performance. EUR. Momentum
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$EUR[,c(4,8,11)], main = "EUR: Momentum factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Performance. EUR. Momentum. Summary
+========================================================
+- Original Momentum performs positively.
+- Survived (0 and 1):  SustFilter significantly lowers the performance of Momentum factor in Europe.
+
+
+The Factors Performance. EUR. Size
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$EUR[,c(5,9,12)], main = "EUR: Size factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+
+The Factors Performance. EUR. Size. Summary
+========================================================
+- Original Size performs negatively.
+- Survived (0 and 1): The survivorship bias significantly lowers the performance of Size factor in Europe.
+- Good (Only 1): The filter increases the survivorship bias effect.
+
+
+
+
+The Factors Performance. EM. GCCR
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$EM[,c(2,6)], main = "EM: GCCR factor performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+
+```
+
+The Factors Performance. EM. GCCR. Summary
+========================================================
+- The results here are really promissing. 1s Portfolio significantly outperformed 0s.
+- However, the performance is comparable to the performance of the equal-weighted index.
+
+
+The Factors Performance. EM. Value
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$EM[,c(3,7,10)], main = "EM: Value factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Performance. EM. Value. Summary
+========================================================
+- Original: performance is positive and much better than in the U.S. and the European markets.
+- Survived (0 and 1): the survivorship bias increases the factor performance.
+- Good (Only 1):  the filtering also helps.
+
+The Factors Performance. EM. Momentum
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$EM[,c(4,8,11)], main = "EM: Momentum factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Performance. EM. Momentum. Summary
+========================================================
+- Original MOM performance is positive.
+- Survived (0 and 1): the survivorship bias lowers Momentum performance in the EM.
+- Good (Only 1): The filter lowers Momentum performance further.
+
+
+The Factors Performance. EM. Size
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$EM[,c(5,9,12)], main = "EM: Size factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Performance. EM. Size. Summary
+========================================================
+- Original: the factor shows negative performance.
+- Survived (0 and 1): The survivorship bias significantly lowers Size performance in the EM.
+- Good (Only 1): the survivorship bias effect is increased.
+
+
+
+The Factors Performance. JBonds. BM
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$JBonds[,1], main = "JBonds: Benchmark performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+
+```
+
+The Factors Performance. JBonds. BM. Summary
+========================================================
+- Equally weighted index is positive.
+
+
+The Factors Performance. JBonds. GCCR
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$JBonds[,c(1,4)], main = "JBonds: GCCR factor performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+
+```
+
+
+The Factors Performance. JBonds. GCCR. Summary
+========================================================
+- The factor based on SustFilter has lower performance than the equal-weighted index.
+
+
+The Factors Performance. JBonds. Momentum
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$JBonds[,c(2,5,7)], main = "JBonds: Momentum factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Performance. JBonds. Momentum. Summary
+========================================================
+- Survived (0 and 1): The momentum factor suffers from survivorship bias. 
+- Good (Only 1): The filtering lowers the momentum further.
+
+The Factors Performance. JBonds. Size
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$JBonds[,c(3,6,8)], main = "JBonds: Size factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+
+The Factors Performance. JBonds. Size. Summary
+========================================================
+- Survived (0 and 1): Here the survivorship bias significantly increase the performance!
+- Good (Only 1): At the same time the filtering significantly reduces the performance.
+
+
+The Factors Performance. IGBonds. BM
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$IGBonds[,1], main = "IGBonds: Benchmark performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+
+```
+
+The Factors Performance. IGBonds. BM. Summary
+========================================================
+- The equally weighted index is also positive
+
+
+The Factors Performance. IGBonds. GCCR
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$IGBonds[,c(1,4)], main = "IGBonds: GCCR factor performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+
+```
+
+The Factors Performance. IGBonds. GCCR. Summary
+========================================================
+- GCCR factor is positive (but the value is only 0.6, significantly lower than the equal-weighted index).
+
+
+The Factors Performance. IGBonds. Momentum
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$IGBonds[,c(2,5,7)], main = "IGBonds: Momentum factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+
+
+The Factors Performance. IGBonds. Momentum. Summary
+========================================================
+- Survived (0 and 1): The momentum factor suffers from survivorship bias. 
+- Good (Only 1): The filtering lowers the momentum further.
+
+The Factors Performance. IGBonds. Size
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf$IGBonds[,c(3,6,8)], main = "IGBonds: Size factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Performance. IGBonds. Size. Summary
+========================================================
+- Survived (0 and 1): Here the survivorship bias significantly increase the performance!
+- Good (Only 1): At the same time the filtering reduces the performance.
+
+
+Conclusions: Part 3
+========================================================
+- Filtering reduces Value, Momentum and Size performance except of value in EM.
+
+
+
+The Factors Long Only Performance. USA. Value
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$USA[,c(2,3,7,10)], main = "USA: Value factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Long Only Performance. USA. Value. Summary
+========================================================
+- Overall, long-only factor performs much better.
+- Survived (0 and 1): the performance is significantly improved by the survivorship bias.
+- Good (Only 1): The filter lowers the performance compared with survived case.
+- The benchmark here is equal-weighted index.
+
+
+The Factors Long Only Performance. USA. Momentum
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$USA[,c(2,4,8,11)], main = "USA: Momentum factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Long Only Performance. USA. Momentum. Summary
+========================================================
+- Overall, long-only factor performs much better.
+- Original: the performance is positive.
+- Survived (0 and 1): Survived portfolio performed better than the original one.
+- Good (Only 1):  the filtering improves the performance futher.
+- The benchmark here is equal-weighted index.
+
+The Factors Long Only Performance. USA. Size
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$USA[,c(2,5,9,12)], main = "USA: Size factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+
+The Factors Long Only Performance. USA. Size. Summary
+========================================================
+- Survived (0 and 1): The original size factor performed roughly the same as the Survived one.
+- Good (Only 1): the filtering slightly improves the performance.
+- The benchmark here is equal-weighted index.
+
+
+The Factors Long Only Performance. EUR. Value
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$EUR[,c(2,3,7,10)], main = "EUR: Value factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Long Only Performance. EUR. Value. Summary
+========================================================
+- Survived (0 and 1): The survivorship bias inproves the performance.
+- Good (Only 1): The effect is decreased a bit.
+- The benchmark here is equal-weighted index.
+
+
+The Factors Long Only Performance. EUR. Momentum
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$EUR[,c(2,4,8,11)], main = "EUR: Momentum factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Long Only Performance. EUR. Momentum. Summary
+========================================================
+- Original Momentum performs positively.
+- Survived (0 and 1):  SustFilter slightly lowers the performance of Momentum factor in Europe.
+- Good (Only 1): there is no additional effect.
+- The benchmark here is equal-weighted index.
+
+
+
+The Factors Long Only Performance. EUR. Size
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$EUR[,c(2,5,9,12)], main = "EUR: Size factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+
+The Factors Long Only Performance. EUR. Size. Summary
+========================================================
+- Survived (0 and 1): The survivorship bias significantly lowers the performance of the size factor in Europe.
+- Good (Only 1): The filter lowers the performance further.
+- The benchmark here is equal-weighted index.
+
+
+The Factors Long Only Performance. EM. Value
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$EM[,c(2,3,7,10)], main = "EM: Value factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Long Only Performance. EM. Value. Summary
+========================================================
+- Original: performance is positive and much better than in the U.S. and the European markets.
+- Survived (0 and 1): the survivorship bias increases the factor performance.
+- Good (Only 1):  the filtering also helps a lot!
+- The benchmark here is equal-weighted index.
+
+The Factors Long Only Performance. EM. Momentum
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$EM[,c(2,4,8,11)], main = "EM: Momentum factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Long Only Performance. EM. Momentum. Summary
+========================================================
+
+- Original MOM performance is positive.
+- Survived (0 and 1): the survivorship bias improves Momentum performance a bit.
+- Good (Only 1): The filter increases Momentum performance further (significantly).
+- The benchmark here is equal-weighted index.
+
+
+The Factors Long Only Performance. EM. Size
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$EM[,c(2,5,9,12)], main = "EM: Size factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Long Only Performance. EM. Size. Summary
+========================================================
+- Original: the factor shows positive performance.
+- Survived (0 and 1): the survivorship bias significantly lowers Size performance in the EM.
+- Good (Only 1): the filter lowers performance  further.
+- The benchmark here is equal-weighted index.
+
+
+The Factors Long Only Performance. JBonds. Momentum
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$JBonds[,c(1,2,5,7)], main = "JBonds: Momentum factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Long Only Performance. JBonds. Momentum. Summary
+========================================================
+- Survived (0 and 1): The momentum factor suffers from survivorship bias. 
+- Good (Only 1): The filtering, however, improves the momentum compared with the Survived case.
+- The benchmark here is equal-weighted index.
+
+The Factors Long Only Performance. JBonds. Size
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$JBonds[,c(1,3,6,8)], main = "JBonds: Size factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+
+The Factors Long Only Performance. JBonds. Size. Summary
+========================================================
+- Survived (0 and 1): Here the survivorship bias significantly increase the performance!
+- Good (Only 1): At the same time the filtering reduces the performance compared with the Survived case.
+- The benchmark here is equal-weighted index.
+
+
+The Factors Long Only Performance. IGBonds. Momentum
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$IGBonds[,c(1,2,5,7)], main = "IGBonds: Momentum factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+
+
+The Factors Long Only Performance. IGBonds. Momentum. Summary
+========================================================
+- Survived (0 and 1): The momentum factor suffers from the survivorship bias. 
+- Good (Only 1): The filtering, however, improves the momentum performance a bit compared with the Survived case.
+- The benchmark here is equal-weighted index.
+
+The Factors Long Only Performance. IGBonds. Size
+========================================================
+```{r}
+chart.CumReturns(l$factors_perf_lo$IGBonds[,c(1,3,6,8)], main = "IGBonds: Size factors performance", cex.lab=1, cex.axis=1, cex.main=1, legend.loc = "left")
+```
+
+The Factors Long Only Performance. IGBonds. Size. Summary
+========================================================
+- Survived (0 and 1): Here the survivorship bias does not influence the performance.
+- Good (Only 1): At the same time the filtering helps a bit.
+
+Conclusions: Part 4
+========================================================
+- Overall, long-only factors perform much better.
+- A significant effect of the filtering is only in EM.
+- There is a robust pattern in momentum: the filtering lowers momentum
+- In the U.S. and Europe the filtering improves value a bit and kills it in the EM.
+- Size factor performance is also improved by the filtering everywhere except of IGBonds.

@@ -1,0 +1,127 @@
+---
+title: "Paper"
+author: "Aliaksandr Panko"
+date: "September 23, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Factor Investing in the Corporate Bond Market Summary
+========================================================
+Key findings:
+
+- Factor portfolios constructed
+using the equity definitions do generate a premium, however, they do not work
+as well as the bond-specific definitions, with the
+exception of momentum.
+
+- Size, low-risk, value, and
+momentum factor portfolios
+generate economically meaning-
+ful and statistically significant
+alphas in the corporate bond
+market.
+
+- Combined multi-factor portfolio benefits from
+diversification among the factors:
+It has a lower tracking error and
+a higher information ratio than
+the individual factors.
+
+- Results are robust to transaction costs,
+alternative factor definitions,
+alternative portfolio construction
+settings, and constructing factor
+portfolios on a subsample of
+liquid bonds.
+
+- By applying factor investing not
+only in the equity market but also in the corporate
+bond market, investors can increase the alpha of
+their multi-asset portfolio by more than 1% a year.
+
+- Bonds with lower risk earn higher risk-adjusted
+returns.
+
+Factors Definition
+========================================================
+
+There are 5 factors that are used in the research
+
+- Market (equity and bond based)
+- Size (equity and bond based)
+- Value (equity and bond based)
+- Momentum (equity and bond based) 
+- Low risk (equity and bond based)
+- Term 
+
+Bond based:
+
+- Size: the total public debt (also picks up illiquidity premium) defined as the sum of the market
+value weights of all company's bonds in the index in that
+month.
+
+- Low Risk:  double sorting is used (rating and maturity).
+For IG: 
+
+1.  LONG: Select AAA <-> A- bonds only. SHORT: Select below AA- bonds only
+2. From these bonds, for LONG: select the shortest 10%; SHORT: longest 10%
+For HJ:
+
+1. LONG: Select BB+ <-> B- bonds only. SHORT: Select below BB- bonds only
+2. From these bonds, for LONG: select the shortest 10%; SHORT: longest 10%
+
+Factors Definition
+========================================================
+
+
+- Value: To construct value factor portfolios each month,
+we first ran a cross-sectional regression of credit spreads on rating dummies (AAA, AA+, AA, ..., C),
+time to maturity, and three-month spread change:
+
+<!-- ![](D:/value.jpg) -->
+
+
+Then the percentage difference between the actual credit
+spread and the fitted (âfairâ) credit spread for each
+bond is calculated. Finally, all bonds are ranked on this percentage
+difference from high to low and selected the
+first (last) 10% of bonds for the top (bottom) value
+portfolio.
+
+* Momentum is implemented as the past-six-month return using
+a one-month implementation lag. They used the
+excess return versus duration-matched Treasuries
+for consistency with our return measure for
+evaluating factor portfolios. They selected the 10%
+of bonds with the highest (lowest) past returns for
+the top (bottom) momentum portfolio.
+
+Data
+========================================================
+
+- Monthly constituent data (excess returns versus duration-matched Treasuries) of the
+Barclays U.S. Corporate Investment Grade Index
+and the Barclays U.S. Corporate High Yield Index
+over January 1994âJune 2015
+- Benchmark: Excess returns for the investment-grade and
+high-yield market indexes from Barclays
+- The four equity factors were downloaded from the
+website of Kenneth French. The term factor is the total return of the Barclays U.S.
+Treasury: 7â10 Year Index minus the one-month T-bill rate (from the same website).
+
+Features 
+========================================================
+
+- Holding period: 12 months
+- Long only portfolio
+- No leverage
+- 10% (20%) is used for a long-short factor
+- multi-factor portfolio is equally weighted.
+Bonds in the portfolio are equally (market value) weighted
+
+- High yield and investment grade bonds are separated into 2 asset classes
+- 2 types of alpha were calculated: CAPM and Fama-French-Carhart
